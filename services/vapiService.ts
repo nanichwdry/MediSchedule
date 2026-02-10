@@ -1,5 +1,5 @@
 // Backend API service for Vapi calls
-const API_BASE = 'http://localhost:3001';
+const API_BASE = import.meta.env.PROD ? '' : 'http://localhost:3001';
 
 export interface CallRequest {
   phoneNumber: string;

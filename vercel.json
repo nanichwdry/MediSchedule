@@ -2,6 +2,12 @@
   "functions": {
     "api/webhooks/vapi.js": {
       "maxDuration": 30
+    },
+    "api/demo/vapi-call.js": {
+      "maxDuration": 30
+    },
+    "api/demo/call/[callId].js": {
+      "maxDuration": 10
     }
   },
   "rewrites": [

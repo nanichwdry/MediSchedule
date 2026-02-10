@@ -124,17 +124,19 @@ class MongoService {
   }
 
   private initialize() {
-    if (!localStorage.getItem(this.PATIENTS_KEY)) {
-      this.generateFreshData();
-    }
+    // Always regenerate data for now to ensure realistic data
+    this.generateFreshData();
   }
 
   generateFreshData() {
+    console.log('Generating fresh realistic patient data...');
     const patients = generateMockPatients(50);
+    console.log('Sample patient:', patients[0]);
     const appointments = generateMockAppointments(patients, 120);
     localStorage.setItem(this.PATIENTS_KEY, JSON.stringify(patients));
     localStorage.setItem(this.APPOINTMENTS_KEY, JSON.stringify(appointments));
     localStorage.setItem(this.CALLS_KEY, JSON.stringify([]));
+    console.log(`Generated ${patients.length} patients and ${appointments.length} appointments`);
   }
 
   // Simulated MongoDB Collection Methods

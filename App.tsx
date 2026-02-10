@@ -139,11 +139,8 @@ const App: React.FC = () => {
             <div className="flex gap-3">
                 <button 
                   onClick={() => {
-                    if (confirm('Reset database with fresh 50 patients? This will clear all current data.')) {
-                      localStorage.clear();
-                      db.generateFreshData();
-                      window.location.reload();
-                    }
+                    localStorage.clear();
+                    window.location.reload();
                   }}
                   className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
                 >
@@ -191,7 +188,7 @@ const App: React.FC = () => {
                           </div>
                           <div>
                               <h3 className="text-lg font-bold text-white">{p.name}</h3>
-                              <p className="text-slate-500 text-xs uppercase tracking-wider">Age: {p.age} • ID: {p._id.slice(0,6)}</p>
+                              <p className="text-slate-500 text-xs uppercase tracking-wider">Age: {p.age || 'N/A'} • ID: {p._id.slice(0,6)}</p>
                           </div>
                       </div>
                       
@@ -206,7 +203,7 @@ const App: React.FC = () => {
                            </div>
                            <div className="text-sm text-slate-300 flex justify-between">
                               <span className="text-slate-500">Insurance:</span> 
-                              <span className="truncate max-w-[150px]">{p.insurance}</span>
+                              <span className="truncate max-w-[150px]">{p.insurance || 'Not specified'}</span>
                            </div>
                       </div>
 

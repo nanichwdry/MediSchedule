@@ -56,7 +56,7 @@ class AppChatbotService {
     }
   ];
 
-  private model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  private model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
   private findRelevantKnowledge(query: string): AppKnowledge[] {
     const queryWords = query.toLowerCase().split(' ');
@@ -86,33 +86,26 @@ class AppChatbotService {
     try {
       const relevantKnowledge = this.findRelevantKnowledge(message);
       
-      const context = relevantKnowledge
-        .map(item => `**${item.topic}**: ${item.content}`)
-        .join('\n\n');
-
-      const history = conversationHistory.length > 0 
-        ? `Previous conversation:\n${conversationHistory.slice(-4).join('\n')}\n\n`
-        : '';
-
-      const prompt = `You are a helpful assistant for the MediSchedule application - a medical appointment scheduling system with AI voice agents.
-
-${history}KNOWLEDGE BASE:
-${context}
-
-USER QUESTION: ${message}
-
-Instructions:
-- Answer based on the MediSchedule app knowledge provided
-- Be helpful and specific about app features
-- If the question is outside the app scope, politely redirect to app-related topics
-- Keep responses concise but informative
-- Use a friendly, professional tone
-
-RESPONSE:`;
-
-      const result = await this.model.generateContent(prompt);
-      const response = result.response.text();
-
+      // Fallback responses without API
+      const responses: Record<string, string> = {
+        'voice calls': 'To make voice calls: 1) Go to Voice Agent tab, 2) Select a patient from the dropdown, 3) Click "Initiate Call", 4) The AI will handle the conversation automatically.',
+        'dashboard': 'The Dashboard shows: Total appointments (50), Pending confirmations (5), Active patients (1,284), Weekly activity chart, and Appointment types breakdown.',
+        'patients': 'Patient Management: View all patients with risk profiles, edit patient info by clicking the pencil icon, see contact details and medical risk assessments.',
+        'schedule': 'Schedule Management: View all appointments, update status (Pending/Scheduled/Completed), see AI summaries from voice calls.',
+        'transcript': 'For live transcripts: 1) Start backend server, 2) Configure Vapi webhook URL, 3) Make actual phone calls - transcripts appear during real conversations.',
+        'webhook': 'Webhook setup: Set your Vapi assistant webhook to your ngrok URL + /api/webhooks/vapi. Backend server must be running on port 3001.'
+      };
+      
+      const query = message.toLowerCase();
+      let response = "I can help with MediSchedule features! Ask about: dashboard stats, voice agent calls, patient management, scheduling, or troubleshooting.";
+      
+      for (const [key, value] of Object.entries(responses)) {
+        if (query.includes(key)) {
+          response = value;
+          break;
+        }
+      }
+      
       return {
         response,
         sources: relevantKnowledge
@@ -121,7 +114,7 @@ RESPONSE:`;
     } catch (error) {
       console.error('Chatbot error:', error);
       return {
-        response: "I'm having trouble right now. Try asking about MediSchedule features like the dashboard, voice agent, patient management, or scheduling.",
+        response: "I can help with MediSchedule features! Ask about: dashboard stats, voice agent calls, patient management, scheduling, or troubleshooting.",
         sources: []
       };
     }

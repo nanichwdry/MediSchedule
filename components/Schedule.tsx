@@ -6,11 +6,17 @@ import { Search, Filter, MoreVertical, CheckCircle, XCircle, Clock } from 'lucid
 interface ScheduleProps {
   appointments: Appointment[];
   onStatusChange: (id: string, status: AppointmentStatus) => void;
+  initialFilter?: string;
+  onPatientClick?: (patientId: string) => void;
 }
 
-const Schedule: React.FC<ScheduleProps> = ({ appointments, onStatusChange }) => {
-  const [filter, setFilter] = useState('ALL');
+const Schedule: React.FC<ScheduleProps> = ({ appointments, onStatusChange, initialFilter = 'ALL', onPatientClick }) => {
+  const [filter, setFilter] = useState(initialFilter);
   const [search, setSearch] = useState('');
+
+  React.useEffect(() => {
+    setFilter(initialFilter);
+  }, [initialFilter]);
 
   const filtered = appointments.filter(a => {
     const matchesFilter = filter === 'ALL' || a.status === filter;
@@ -97,7 +103,10 @@ const Schedule: React.FC<ScheduleProps> = ({ appointments, onStatusChange }) => 
                     </div>
                   </td>
                   <td className="p-4">
-                    <div className="flex items-center gap-3">
+                    <div 
+                      className="flex items-center gap-3 cursor-pointer hover:bg-slate-700/30 rounded-lg p-2 -m-2 transition-colors"
+                      onClick={() => onPatientClick?.(appt.patientId)}
+                    >
                       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-xs font-bold text-white">
                         {appt.patientName.split(' ').map(n => n[0]).join('')}
                       </div>

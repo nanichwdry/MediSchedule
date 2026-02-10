@@ -13,7 +13,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange }) => 
     { id: 'schedule', label: 'Schedule', icon: Calendar },
     { id: 'patients', label: 'Patients', icon: Users },
     { id: 'calls', label: 'Voice Agent', icon: Phone },
-    { id: 'rag', label: 'App Assistant', icon: Brain },
+    { id: 'rag', label: 'AI Assistant', icon: Brain },
   ];
 
   return (

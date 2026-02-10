@@ -1,8 +1,3 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-const genAI = new GoogleGenerativeAI(apiKey || 'PLACEHOLDER_API_KEY');
-
 interface AppKnowledge {
   id: string;
   topic: string;
@@ -55,8 +50,6 @@ class AppChatbotService {
       category: 'troubleshooting'
     }
   ];
-
-  private model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
   private findRelevantKnowledge(query: string): AppKnowledge[] {
     const queryWords = query.toLowerCase().split(' ');

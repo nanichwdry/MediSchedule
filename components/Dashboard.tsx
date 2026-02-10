@@ -1,14 +1,26 @@
 import React, { useMemo, useState } from 'react';
-import { Appointment, AppointmentStatus } from '../types';
+import { Appointment, AppointmentStatus, Patient } from '../types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
-import { CalendarCheck, Clock, Users, DollarSign } from 'lucide-react';
+import { CalendarCheck, Clock, Users, DollarSign, TrendingUp, Activity } from 'lucide-react';
+
+interface DashboardProps {
+  appointments: Appointment[];
+  patients: Patient[];
+  onPatientClick?: (patient: Patient) => void;
+  onAppointmentFilter?: (filter: string) => void;
+}
 
 interface DashboardProps {
   appointments: Appointment[];
 }
 
-const StatCard: React.FC<{ title: string; value: string; icon: React.ElementType; color: string }> = ({ title, value, icon: Icon, color }) => (
-  <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl hover:border-slate-700 transition-all">
+const StatCard: React.FC<{ title: string; value: string; icon: React.ElementType; color: string; onClick?: () => void }> = ({ title, value, icon: Icon, color, onClick }) => (
+  <div 
+    className={`bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl hover:border-slate-700 transition-all ${
+      onClick ? 'cursor-pointer hover:scale-105' : ''
+    }`}
+    onClick={onClick}
+  >
     <div className="flex items-start justify-between">
       <div>
         <p className="text-slate-400 text-sm font-medium mb-1">{title}</p>
@@ -21,8 +33,9 @@ const StatCard: React.FC<{ title: string; value: string; icon: React.ElementType
   </div>
 );
 
-const Dashboard: React.FC<DashboardProps> = ({ appointments }) => {
+const Dashboard: React.FC<DashboardProps> = ({ appointments, patients, onPatientClick, onAppointmentFilter }) => {
   const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
   
   const stats = useMemo(() => {
     const total = appointments.length;
@@ -43,12 +56,25 @@ const Dashboard: React.FC<DashboardProps> = ({ appointments }) => {
 
   const weeklyData = useMemo(() => {
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    const mockData = [12, 8, 15, 11, 9, 6, 4];
-    return days.map((day, index) => ({
-      name: day,
-      appointments: mockData[index]
-    }));
-  }, []);
+    const now = new Date();
+    const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay() + 1));
+    
+    return days.map((day, index) => {
+      const dayDate = new Date(startOfWeek);
+      dayDate.setDate(startOfWeek.getDate() + index);
+      
+      const dayAppointments = appointments.filter(appt => {
+        const apptDate = new Date(appt.date);
+        return apptDate.toDateString() === dayDate.toDateString();
+      }).length;
+      
+      return {
+        name: day,
+        appointments: dayAppointments,
+        date: dayDate.toISOString().split('T')[0]
+      };
+    });
+  }, [appointments]);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -69,25 +95,28 @@ const Dashboard: React.FC<DashboardProps> = ({ appointments }) => {
           title="Total Appointments" 
           value={stats.total.toString()} 
           icon={CalendarCheck} 
-          color="bg-emerald-500 text-emerald-500" 
+          color="bg-emerald-500 text-emerald-500"
+          onClick={() => onAppointmentFilter?.('ALL')}
         />
         <StatCard 
           title="Pending Confirmation" 
           value={stats.pending.toString()} 
           icon={Clock} 
-          color="bg-amber-500 text-amber-500" 
+          color="bg-amber-500 text-amber-500"
+          onClick={() => onAppointmentFilter?.('PENDING')}
         />
         <StatCard 
           title="Active Patients" 
-          value="1,284" 
+          value={patients.length.toString()} 
           icon={Users} 
           color="bg-blue-500 text-blue-500" 
         />
         <StatCard 
-          title="Est. Revenue (Mo)" 
-          value="$42,500" 
-          icon={DollarSign} 
-          color="bg-purple-500 text-purple-500" 
+          title="Completed Today" 
+          value={stats.completed.toString()} 
+          icon={TrendingUp} 
+          color="bg-purple-500 text-purple-500"
+          onClick={() => onAppointmentFilter?.('COMPLETED')}
         />
       </div>
 
@@ -102,14 +131,29 @@ const Dashboard: React.FC<DashboardProps> = ({ appointments }) => {
               <div key={day.name} className="flex flex-col items-center flex-1">
                 <div className="text-white text-sm mb-2">{day.appointments}</div>
                 <div 
-                  className="bg-cyan-500 w-full rounded-t-md transition-all hover:bg-cyan-400"
-                  style={{ height: `${(day.appointments / 16) * 200}px` }}
+                  className={`w-full rounded-t-md transition-all cursor-pointer ${
+                    selectedDay === day.name ? 'bg-cyan-300' : 'bg-cyan-500 hover:bg-cyan-400'
+                  }`}
+                  style={{ height: `${Math.max((day.appointments / Math.max(...weeklyData.map(d => d.appointments), 1)) * 200, 10)}px` }}
                   title={`${day.name}: ${day.appointments} appointments`}
+                  onClick={() => {
+                    setSelectedDay(selectedDay === day.name ? null : day.name);
+                    if (day.appointments > 0) {
+                      onAppointmentFilter?.(day.date);
+                    }
+                  }}
                 ></div>
                 <div className="text-white text-sm mt-2">{day.name}</div>
               </div>
             ))}
           </div>
+          {selectedDay && (
+            <div className="mt-4 p-3 bg-slate-800 rounded-lg">
+              <div className="text-sm text-slate-300">
+                Showing appointments for {selectedDay}: {weeklyData.find(d => d.name === selectedDay)?.appointments || 0} total
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">

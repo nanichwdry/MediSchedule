@@ -18,6 +18,13 @@ export interface Patient {
   name: string;
   email: string;
   phone: string;
+  age: number;
+  dateOfBirth: string;
+  address: string;
+  insurance: string;
+  emergencyContact: string;
+  emergencyPhone: string;
+  medicalHistory: string;
   lastVisit?: string;
   notes?: string;
   riskProfile: 'Low' | 'Moderate' | 'High';

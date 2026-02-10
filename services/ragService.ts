@@ -1,9 +1,3 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-console.log('Gemini API Key loaded:', apiKey ? 'Yes' : 'No');
-const genAI = new GoogleGenerativeAI(apiKey || 'PLACEHOLDER_API_KEY');
-
 interface MedicalDocument {
   id: string;
   title: string;
@@ -46,26 +40,19 @@ class RAGService {
     }
   ];
 
-  private model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-
-  // Simple text similarity scoring (in production, use proper embeddings)
-  private calculateSimilarity(query: string, document: MedicalDocument): number {
-    const queryWords = query.toLowerCase().split(' ');
-    const docWords = document.content.toLowerCase().split(' ');
-    const titleWords = document.title.toLowerCase().split(' ');
-    
-    let score = 0;
-    queryWords.forEach(word => {
-      if (docWords.includes(word)) score += 1;
-      if (titleWords.includes(word)) score += 2; // Title matches weighted higher
-    });
-    
-    return score / queryWords.length;
-  }
-
   private retrieveRelevantDocs(query: string, topK: number = 3): MedicalDocument[] {
+    const queryWords = query.toLowerCase().split(' ');
     return this.documents
-      .map(doc => ({ doc, score: this.calculateSimilarity(query, doc) }))
+      .map(doc => {
+        const docWords = doc.content.toLowerCase().split(' ');
+        const titleWords = doc.title.toLowerCase().split(' ');
+        let score = 0;
+        queryWords.forEach(word => {
+          if (docWords.includes(word)) score += 1;
+          if (titleWords.includes(word)) score += 2;
+        });
+        return { doc, score: score / queryWords.length };
+      })
       .filter(item => item.score > 0)
       .sort((a, b) => b.score - a.score)
       .slice(0, topK)
@@ -77,65 +64,33 @@ class RAGService {
     sources: MedicalDocument[];
     confidence: 'high' | 'medium' | 'low';
   }> {
-    try {
-      // Retrieve relevant documents
-      const relevantDocs = this.retrieveRelevantDocs(question, 3);
-      
-      if (relevantDocs.length === 0) {
-        return {
-          answer: "I don't have specific information about that topic in my medical knowledge base. Please consult with a healthcare professional for accurate medical advice.",
-          sources: [],
-          confidence: 'low'
-        };
-      }
-
-      // Create context from retrieved documents
-      const context = relevantDocs
-        .map(doc => `**${doc.title}**: ${doc.content}`)
-        .join('\n\n');
-
-      const prompt = `
-You are a medical AI assistant. Based on the following medical knowledge base excerpts, answer the user's question. 
-
-IMPORTANT GUIDELINES:
-- Only use information from the provided context
-- If the context doesn't contain enough information, say so
-- Always recommend consulting healthcare professionals for medical decisions
-- Be precise and avoid speculation
-- Include relevant details from the context
-
-CONTEXT:
-${context}
-
-QUESTION: ${question}
-
-ANSWER:`;
-
-      const result = await this.model.generateContent(prompt);
-      const answer = result.response.text();
-
-      // Determine confidence based on number of relevant docs and content quality
-      let confidence: 'high' | 'medium' | 'low' = 'medium';
-      if (relevantDocs.length >= 2 && answer.length > 100) {
-        confidence = 'high';
-      } else if (relevantDocs.length === 1 || answer.length < 50) {
-        confidence = 'low';
-      }
-
+    const relevantDocs = this.retrieveRelevantDocs(question, 3);
+    
+    if (relevantDocs.length === 0) {
       return {
-        answer,
-        sources: relevantDocs,
-        confidence
-      };
-
-    } catch (error) {
-      console.error('RAG query error:', error);
-      return {
-        answer: "I'm experiencing technical difficulties. Please try again or consult with a healthcare professional.",
+        answer: "I don't have specific information about that topic in my medical knowledge base. Please consult with a healthcare professional for accurate medical advice.",
         sources: [],
         confidence: 'low'
       };
     }
+
+    // Simple rule-based responses
+    const context = relevantDocs.map(doc => doc.content).join(' ');
+    let answer = "Based on the available medical information: ";
+    
+    if (relevantDocs.length >= 2) {
+      answer += relevantDocs[0].content;
+    } else {
+      answer += "Limited information available. " + relevantDocs[0].content;
+    }
+    
+    answer += " Please consult with a healthcare professional for personalized medical advice.";
+
+    return {
+      answer,
+      sources: relevantDocs,
+      confidence: relevantDocs.length >= 2 ? 'high' : 'medium'
+    };
   }
 
   async addDocument(doc: Omit<MedicalDocument, 'id'>): Promise<void> {

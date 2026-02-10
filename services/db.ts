@@ -4,38 +4,104 @@ import { Appointment, Patient, CallLog, AppointmentStatus } from '../types';
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
 // Mock Data Generator
-const firstNames = ['James', 'Mary', 'John', 'Patricia', 'Robert', 'Jennifer', 'Michael', 'Linda', 'William', 'Elizabeth'];
-const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez'];
-const conditions = ['Hypertension', 'Diabetes Type 2', 'Asthma', 'Routine Checkup', 'Migraine', 'Back Pain', 'Flu Symptoms'];
+const firstNames = [
+  'James', 'Mary', 'John', 'Patricia', 'Robert', 'Jennifer', 'Michael', 'Linda', 'William', 'Elizabeth',
+  'David', 'Barbara', 'Richard', 'Susan', 'Joseph', 'Jessica', 'Thomas', 'Sarah', 'Christopher', 'Karen',
+  'Charles', 'Nancy', 'Daniel', 'Lisa', 'Matthew', 'Betty', 'Anthony', 'Helen', 'Mark', 'Sandra',
+  'Donald', 'Donna', 'Steven', 'Carol', 'Paul', 'Ruth', 'Andrew', 'Sharon', 'Joshua', 'Michelle',
+  'Kenneth', 'Laura', 'Kevin', 'Sarah', 'Brian', 'Kimberly', 'George', 'Deborah', 'Edward', 'Dorothy'
+];
+const lastNames = [
+  'Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez',
+  'Hernandez', 'Lopez', 'Gonzalez', 'Wilson', 'Anderson', 'Thomas', 'Taylor', 'Moore', 'Jackson', 'Martin',
+  'Lee', 'Perez', 'Thompson', 'White', 'Harris', 'Sanchez', 'Clark', 'Ramirez', 'Lewis', 'Robinson',
+  'Walker', 'Young', 'Allen', 'King', 'Wright', 'Scott', 'Torres', 'Nguyen', 'Hill', 'Flores',
+  'Green', 'Adams', 'Nelson', 'Baker', 'Hall', 'Rivera', 'Campbell', 'Mitchell', 'Carter', 'Roberts'
+];
+const conditions = [
+  'Hypertension', 'Diabetes Type 2', 'Asthma', 'Routine Checkup', 'Migraine', 'Back Pain', 'Flu Symptoms',
+  'Arthritis', 'High Cholesterol', 'Anxiety', 'Depression', 'Allergies', 'Insomnia', 'COPD',
+  'Heart Disease', 'Osteoporosis', 'Thyroid Issues', 'Kidney Disease', 'Liver Disease', 'Cancer Screening'
+];
+const medicalHistory = [
+  'No significant medical history', 'History of heart disease', 'Family history of diabetes',
+  'Previous surgery in 2019', 'Chronic pain management', 'Medication allergies noted',
+  'Regular blood pressure monitoring', 'Diabetic - insulin dependent', 'Asthma - uses inhaler',
+  'Previous hospitalization', 'Ongoing physical therapy', 'Mental health treatment'
+];
+const insuranceProviders = [
+  'Blue Cross Blue Shield', 'Aetna', 'Cigna', 'UnitedHealth', 'Humana', 'Kaiser Permanente',
+  'Anthem', 'Medicare', 'Medicaid', 'Tricare', 'Independence Blue Cross', 'Molina Healthcare'
+];
 
 const generateMockPatients = (count: number): Patient[] => {
-  return Array.from({ length: count }).map(() => ({
-    _id: generateId(),
-    name: `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`,
-    email: `patient${Math.floor(Math.random() * 1000)}@example.com`,
-    phone: `+1-555-01${Math.floor(Math.random() * 99)}`,
-    riskProfile: Math.random() > 0.8 ? 'High' : Math.random() > 0.5 ? 'Moderate' : 'Low',
-  }));
+  return Array.from({ length: count }).map((_, index) => {
+    const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+    const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+    const age = 18 + Math.floor(Math.random() * 70);
+    const phoneNumber = `+1-${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 9000) + 1000}`;
+    const birthYear = new Date().getFullYear() - age;
+    const birthMonth = Math.floor(Math.random() * 12);
+    const birthDay = Math.floor(Math.random() * 28) + 1;
+    
+    return {
+      _id: generateId(),
+      name: `${firstName} ${lastName}`,
+      email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}${Math.floor(Math.random() * 100)}@email.com`,
+      phone: phoneNumber,
+      age,
+      dateOfBirth: `${birthYear}-${String(birthMonth + 1).padStart(2, '0')}-${String(birthDay).padStart(2, '0')}`,
+      address: `${Math.floor(Math.random() * 9999) + 1} ${['Main St', 'Oak Ave', 'Pine Rd', 'Elm Dr', 'Maple Ln', 'Cedar Way', 'Park Blvd', 'First Ave', 'Second St', 'Third Dr'][Math.floor(Math.random() * 10)]}, ${['Springfield', 'Franklin', 'Georgetown', 'Madison', 'Clinton', 'Riverside', 'Fairview', 'Midtown', 'Downtown', 'Uptown'][Math.floor(Math.random() * 10)]}, ${['CA', 'NY', 'TX', 'FL', 'IL', 'PA', 'OH', 'GA', 'NC', 'MI'][Math.floor(Math.random() * 10)]} ${Math.floor(Math.random() * 90000) + 10000}`,
+      insurance: insuranceProviders[Math.floor(Math.random() * insuranceProviders.length)],
+      emergencyContact: `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastName}`,
+      emergencyPhone: `+1-${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 900) + 100}-${Math.floor(Math.random() * 9000) + 1000}`,
+      medicalHistory: medicalHistory[Math.floor(Math.random() * medicalHistory.length)],
+      lastVisit: Math.random() > 0.3 ? new Date(Date.now() - Math.floor(Math.random() * 365) * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : undefined,
+      riskProfile: Math.random() > 0.8 ? 'High' : Math.random() > 0.5 ? 'Moderate' : 'Low',
+      notes: Math.random() > 0.5 ? `Patient is ${['cooperative and follows instructions well', 'anxious about medical procedures', 'punctual and reliable', 'requires assistance with mobility', 'prefers morning appointments', 'has transportation challenges', 'very health-conscious', 'needs interpreter services'][Math.floor(Math.random() * 8)]}` : undefined,
+    };
+  });
 };
 
 const generateMockAppointments = (patients: Patient[], count: number): Appointment[] => {
   const now = new Date();
   return Array.from({ length: count }).map(() => {
     const patient = patients[Math.floor(Math.random() * patients.length)];
-    const dateOffset = Math.floor(Math.random() * 30) - 5; // -5 to +25 days
+    const dateOffset = Math.floor(Math.random() * 60) - 15; // -15 to +45 days
     const apptDate = new Date(now);
     apptDate.setDate(now.getDate() + dateOffset);
-    apptDate.setHours(9 + Math.floor(Math.random() * 8), 0, 0, 0);
+    apptDate.setHours(8 + Math.floor(Math.random() * 10), [0, 15, 30, 45][Math.floor(Math.random() * 4)], 0, 0);
+
+    const appointmentTypes = ['Check-up', 'Follow-up', 'Consultation', 'Emergency'];
+    const appointmentType = appointmentTypes[Math.floor(Math.random() * appointmentTypes.length)];
+    
+    let status: AppointmentStatus;
+    if (dateOffset < -1) {
+      status = AppointmentStatus.COMPLETED;
+    } else if (dateOffset < 0) {
+      status = Math.random() > 0.5 ? AppointmentStatus.COMPLETED : AppointmentStatus.CANCELLED;
+    } else {
+      status = Math.random() > 0.2 ? AppointmentStatus.SCHEDULED : AppointmentStatus.PENDING;
+    }
+
+    const conditionForAppt = conditions[Math.floor(Math.random() * conditions.length)];
+    const notes = [
+      `Patient reporting ${conditionForAppt.toLowerCase()}`,
+      `Follow-up for ${conditionForAppt.toLowerCase()}`,
+      `Routine ${appointmentType.toLowerCase()} - ${conditionForAppt.toLowerCase()}`,
+      `Patient experiencing symptoms related to ${conditionForAppt.toLowerCase()}`,
+      `Scheduled ${appointmentType.toLowerCase()} for ${conditionForAppt.toLowerCase()} management`
+    ];
 
     return {
       _id: generateId(),
       patientId: patient._id,
       patientName: patient.name,
       date: apptDate.toISOString(),
-      durationMinutes: 30,
-      status: dateOffset < 0 ? AppointmentStatus.COMPLETED : Math.random() > 0.2 ? AppointmentStatus.SCHEDULED : AppointmentStatus.PENDING,
-      type: Math.random() > 0.7 ? 'Check-up' : 'Follow-up',
-      notes: `Patient reporting ${conditions[Math.floor(Math.random() * conditions.length)]}.`,
+      durationMinutes: [15, 30, 45, 60][Math.floor(Math.random() * 4)],
+      status,
+      type: appointmentType as 'Check-up' | 'Follow-up' | 'Emergency' | 'Consultation',
+      notes: notes[Math.floor(Math.random() * notes.length)],
     };
   });
 };
@@ -59,12 +125,16 @@ class MongoService {
 
   private initialize() {
     if (!localStorage.getItem(this.PATIENTS_KEY)) {
-      const patients = generateMockPatients(20);
-      const appointments = generateMockAppointments(patients, 50);
-      localStorage.setItem(this.PATIENTS_KEY, JSON.stringify(patients));
-      localStorage.setItem(this.APPOINTMENTS_KEY, JSON.stringify(appointments));
-      localStorage.setItem(this.CALLS_KEY, JSON.stringify([]));
+      this.generateFreshData();
     }
+  }
+
+  generateFreshData() {
+    const patients = generateMockPatients(50);
+    const appointments = generateMockAppointments(patients, 120);
+    localStorage.setItem(this.PATIENTS_KEY, JSON.stringify(patients));
+    localStorage.setItem(this.APPOINTMENTS_KEY, JSON.stringify(appointments));
+    localStorage.setItem(this.CALLS_KEY, JSON.stringify([]));
   }
 
   // Simulated MongoDB Collection Methods

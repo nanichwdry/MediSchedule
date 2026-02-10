@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { config } from 'dotenv';
+import OpenAI from 'openai';
 
 config({ path: '.env.local' });
 
@@ -13,6 +14,44 @@ app.use(express.json());
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({ message: 'MediSchedule Backend API', status: 'running' });
+});
+
+// Health endpoint
+app.get('/health', (req, res) => {
+  res.json({ ok: true });
+});
+
+// OpenAI generate endpoint
+app.post('/api/openai/generate', async (req, res) => {
+  console.log('POST /api/openai/generate called');
+  
+  const { prompt } = req.body;
+  
+  if (!prompt || prompt.trim() === '') {
+    console.log('Error: prompt is required');
+    return res.status(400).json({ error: 'prompt is required' });
+  }
+  
+  if (!process.env.OPENAI_API_KEY) {
+    console.log('Error: OPENAI_API_KEY not configured');
+    return res.status(500).json({ error: 'OPENAI_API_KEY not configured' });
+  }
+  
+  try {
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 1000
+    });
+    
+    const content = completion.choices[0]?.message?.content || '';
+    res.json({ content });
+  } catch (error) {
+    console.log('OpenAI API error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Store call data in memory for demo

@@ -1,0 +1,7 @@
+{
+  "name": "MediSchedule Dashboard",
+  "description": "A dark-themed medical appointment scheduler with Vapi voice integration simulation and MongoDB-style local storage.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

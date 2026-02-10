@@ -1,0 +1,132 @@
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+const genAI = new GoogleGenerativeAI(apiKey || 'PLACEHOLDER_API_KEY');
+
+interface AppKnowledge {
+  id: string;
+  topic: string;
+  content: string;
+  category: 'features' | 'usage' | 'technical' | 'troubleshooting';
+}
+
+class AppChatbotService {
+  private appKnowledge: AppKnowledge[] = [
+    {
+      id: '1',
+      topic: 'Dashboard Overview',
+      content: 'The MediSchedule dashboard shows appointment statistics, patient counts, weekly activity charts, and appointment type breakdowns. It displays total appointments, pending confirmations, active patients, and estimated monthly revenue.',
+      category: 'features'
+    },
+    {
+      id: '2',
+      topic: 'Voice Agent Calls',
+      content: 'The Voice Agent uses Vapi to make real phone calls to patients for appointment scheduling. Select a patient, click "Initiate Call", and the AI will handle the conversation. Live transcripts appear during calls.',
+      category: 'features'
+    },
+    {
+      id: '3',
+      topic: 'Patient Management',
+      content: 'The Patients tab shows all patient records with risk profiles (Low, Moderate, High). You can edit patient information by clicking the pencil icon. Each patient has contact details and medical risk assessment.',
+      category: 'features'
+    },
+    {
+      id: '4',
+      topic: 'Schedule Management',
+      content: 'The Schedule tab displays all appointments with status tracking (Pending, Scheduled, Completed). You can update appointment statuses and view appointment details including AI summaries from voice calls.',
+      category: 'features'
+    },
+    {
+      id: '5',
+      topic: 'Webhook Configuration',
+      content: 'For live transcripts to work, configure your Vapi assistant webhook URL to point to your ngrok tunnel + /api/webhooks/vapi. The backend server handles webhook events and stores call data.',
+      category: 'technical'
+    },
+    {
+      id: '6',
+      topic: 'Environment Setup',
+      content: 'Required environment variables: VITE_GEMINI_API_KEY for AI features, VAPI_API_KEY, VAPI_ASSISTANT_ID, VAPI_PHONE_NUMBER_ID for voice calls, and PUBLIC_BASE_URL for webhook endpoints.',
+      category: 'technical'
+    },
+    {
+      id: '7',
+      topic: 'Transcript Issues',
+      content: 'If live transcripts are not appearing: 1) Check if backend server is running on port 3001, 2) Verify ngrok tunnel is active, 3) Confirm Vapi webhook URL is correctly configured, 4) Check browser console for errors.',
+      category: 'troubleshooting'
+    }
+  ];
+
+  private model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+  private findRelevantKnowledge(query: string): AppKnowledge[] {
+    const queryWords = query.toLowerCase().split(' ');
+    return this.appKnowledge
+      .map(item => {
+        const contentWords = item.content.toLowerCase().split(' ');
+        const topicWords = item.topic.toLowerCase().split(' ');
+        
+        let score = 0;
+        queryWords.forEach(word => {
+          if (contentWords.includes(word)) score += 1;
+          if (topicWords.includes(word)) score += 2;
+        });
+        
+        return { item, score: score / queryWords.length };
+      })
+      .filter(result => result.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 3)
+      .map(result => result.item);
+  }
+
+  async chatWithBot(message: string, conversationHistory: string[] = []): Promise<{
+    response: string;
+    sources: AppKnowledge[];
+  }> {
+    try {
+      const relevantKnowledge = this.findRelevantKnowledge(message);
+      
+      const context = relevantKnowledge
+        .map(item => `**${item.topic}**: ${item.content}`)
+        .join('\n\n');
+
+      const history = conversationHistory.length > 0 
+        ? `Previous conversation:\n${conversationHistory.slice(-4).join('\n')}\n\n`
+        : '';
+
+      const prompt = `You are a helpful assistant for the MediSchedule application - a medical appointment scheduling system with AI voice agents.
+
+${history}KNOWLEDGE BASE:
+${context}
+
+USER QUESTION: ${message}
+
+Instructions:
+- Answer based on the MediSchedule app knowledge provided
+- Be helpful and specific about app features
+- If the question is outside the app scope, politely redirect to app-related topics
+- Keep responses concise but informative
+- Use a friendly, professional tone
+
+RESPONSE:`;
+
+      const result = await this.model.generateContent(prompt);
+      const response = result.response.text();
+
+      return {
+        response,
+        sources: relevantKnowledge
+      };
+
+    } catch (error) {
+      console.error('Chatbot error:', error);
+      return {
+        response: "I'm having trouble right now. Try asking about MediSchedule features like the dashboard, voice agent, patient management, or scheduling.",
+        sources: []
+      };
+    }
+  }
+}
+
+export const appChatbot = new AppChatbotService();
+export type { AppKnowledge };
